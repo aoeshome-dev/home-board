@@ -1,0 +1,470 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>لوحة البيت</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=Reem+Kufi:wght@500;600;700&display=swap">
+<style>
+/* Layout: TV landscape, three columns read right-to-left — the hour, the prayers, the day's list. Single dark look chosen for a screen that stays on all day. */
+:root{
+  --bg:#0B1620; --panel:#0F202D; --line:#1D3446; --fg:#ECE5D4; --muted:#8B9DA9;
+  --accent:#E0B25C; --accent-soft:rgba(224,178,92,.13); --accent-ink:#1B1306; --soon:#EE9460;
+  --display:"Reem Kufi","IBM Plex Sans Arabic",system-ui,sans-serif;
+  --body:"IBM Plex Sans Arabic",system-ui,"Segoe UI",Tahoma,sans-serif;
+  color-scheme:dark;
+}
+[hidden]{display:none!important}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:clamp(14px,1.05vw,30px);line-height:1.5}
+.app{min-height:100%;box-sizing:border-box;display:flex;flex-direction:column;gap:1.4rem;padding-block:1.4rem;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.num{direction:ltr;unicode-bidi:isolate;font-variant-numeric:tabular-nums}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+
+/* top bar */
+.top{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+.brand{font-family:var(--display);font-size:1.35rem;letter-spacing:.01em;color:var(--muted)}
+.brand b{color:var(--fg);font-weight:600}
+.controls{display:flex;gap:.5rem;flex-wrap:wrap;transition:opacity .6s}
+.idle .controls{opacity:0;pointer-events:none}
+.idle{cursor:none}
+.btn{background:transparent;border:1px solid var(--line);border-radius:999px;padding:.35rem .95rem;font-size:.85rem;color:var(--muted)}
+.btn:hover{color:var(--fg);border-color:var(--muted)}
+.btn.on{color:var(--accent-ink);background:var(--accent);border-color:var(--accent)}
+
+/* board */
+.board{flex:1;display:grid;gap:1.4rem;grid-template-columns:1fr;align-items:start}
+@media (min-width:900px){.board{grid-template-columns:1.15fr 1fr 1fr;align-items:stretch}}
+.col{min-width:0;display:flex;flex-direction:column;gap:1.4rem}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:1.4rem 1.5rem}
+.label{font-size:.78rem;letter-spacing:.06em;color:var(--muted);font-weight:500}
+
+/* clock column */
+.clock{display:flex;flex-direction:column;gap:.4rem;padding-top:.4rem}
+.time{font-family:var(--display);font-weight:600;font-size:clamp(4.2rem,9vw,11rem);line-height:.95;display:flex;align-items:baseline;gap:.6rem}
+.time .hm{font-variant-numeric:tabular-nums}
+.time .ampm{font-size:.28em;color:var(--accent);font-family:var(--body);font-weight:500}
+.time .sec{font-size:.26em;color:var(--muted);font-family:var(--body)}
+.dates{display:flex;flex-direction:column;gap:.1rem;margin-top:.6rem}
+.greg{font-size:1.6rem;font-weight:500}
+.hijri{font-size:1.2rem;color:var(--accent)}
+.weather{margin-top:auto;display:grid;grid-template-columns:auto 1fr;gap:.4rem 1.2rem;align-items:center;border-top:1px solid var(--line);padding-top:1.4rem}
+.wicon{width:4.6rem;height:4.6rem;color:var(--accent);grid-row:span 2}
+.wtemp{font-family:var(--display);font-size:3.6rem;line-height:1;font-weight:600}
+.wtemp small{font-size:.4em;color:var(--muted);font-weight:500;margin-inline-start:.4rem}
+.wdesc{color:var(--muted);font-size:1rem}
+.wmeta{grid-column:1/-1;display:flex;gap:1.4rem;flex-wrap:wrap;color:var(--muted);font-size:.95rem}
+.wmeta span b{color:var(--fg);font-weight:500}
+.wnote{color:var(--muted);font-size:.9rem;grid-column:1/-1}
+
+/* prayers */
+.next{display:flex;flex-direction:column;gap:.2rem;padding-bottom:1.2rem;border-bottom:1px solid var(--line);margin-bottom:.8rem}
+.next .pname{font-family:var(--display);font-size:2.6rem;line-height:1.15;font-weight:600}
+.next .count{font-size:3.4rem;line-height:1.05;font-weight:500;letter-spacing:.02em}
+.next .at{color:var(--muted)}
+.next .warn{display:none;color:var(--soon);font-weight:500}
+.next.soon .count{color:var(--soon)}
+.next.soon .warn{display:block}
+.plist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.25rem}
+.plist li{display:flex;justify-content:space-between;align-items:baseline;padding:.55rem .8rem;border-radius:10px;font-size:1.25rem}
+.plist li .t{font-weight:500}
+.plist li .t small{font-size:.65em;color:var(--muted);margin-inline-start:.25rem}
+.plist li.past{color:var(--muted)}
+.plist li.cur{background:var(--accent-soft);color:var(--accent)}
+.plist li.cur .t small{color:var(--accent)}
+.plist li.sun{font-size:1.05rem;color:var(--muted)}
+.method{margin-top:auto;padding-top:1rem;font-size:.8rem;color:var(--muted)}
+
+/* tasks */
+.thead{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:.8rem}
+.thead h2{margin:0;font-family:var(--display);font-size:1.6rem;font-weight:600}
+.tlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.tlist li{display:grid;grid-template-columns:auto auto 1fr;gap:.8rem;align-items:center;padding:.7rem 0;border-bottom:1px solid var(--line);font-size:1.15rem;cursor:pointer;min-width:0}
+.tlist li:last-child{border-bottom:0}
+.chk{width:1.15rem;height:1.15rem;border:2px solid var(--muted);border-radius:50%;box-sizing:border-box}
+.tlist li.done .chk{background:var(--accent);border-color:var(--accent)}
+.tlist li.done .txt{text-decoration:line-through;color:var(--muted)}
+.tlist .tm{color:var(--accent);font-weight:500;min-width:4.2rem}
+.tlist .tm.none{color:transparent}
+.tlist li.late:not(.done) .tm{color:var(--muted)}
+.txt{min-width:0;overflow-wrap:anywhere}
+.chip{font-size:.68rem;border:1px solid var(--line);color:var(--muted);border-radius:999px;padding:.05rem .5rem;margin-inline-start:.4rem;vertical-align:middle;white-space:nowrap}
+.chip.nx{border-color:var(--accent);color:var(--accent)}
+.empty{color:var(--muted);padding:1rem 0}
+
+/* alert overlay */
+.alert{position:fixed;inset:0;z-index:50;background:rgba(7,14,20,.94);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;text-align:center;padding:2rem}
+.alert .a1{font-size:1.6rem;color:var(--muted)}
+.alert .a2{font-family:var(--display);font-size:clamp(3.5rem,9vw,10rem);color:var(--accent);line-height:1.05;font-weight:700}
+.alert .a3{font-size:2rem}
+@media (prefers-reduced-motion:no-preference){.alert .a2{animation:glow 3s ease-in-out infinite}}
+@keyframes glow{50%{opacity:.7}}
+
+/* dialog */
+dialog{background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:16px;padding:1.4rem;width:min(34rem,calc(100vw - 32px));box-sizing:border-box}
+dialog::backdrop{background:rgba(0,0,0,.6)}
+dialog h3{margin:0 0 1rem;font-family:var(--display);font-size:1.4rem}
+.form{display:grid;grid-template-columns:1fr 1fr;gap:.7rem}
+.form .full{grid-column:1/-1}
+.form label{display:flex;flex-direction:column;gap:.25rem;font-size:.85rem;color:var(--muted)}
+.form input,.form select{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:.55rem .7rem;font-size:1rem}
+.primary{background:var(--accent);color:var(--accent-ink);border:0;border-radius:10px;padding:.6rem 1rem;font-weight:600}
+.dlist{list-style:none;margin:1.2rem 0 0;padding:0;max-height:16rem;overflow:auto;display:flex;flex-direction:column;gap:.3rem}
+.dlist li{display:flex;justify-content:space-between;align-items:center;gap:.6rem;padding:.4rem .6rem;border-radius:8px;background:var(--bg)}
+.dlist li span{min-width:0;overflow-wrap:anywhere}
+.del{background:none;border:0;color:var(--soon);font-size:.85rem;white-space:nowrap}
+.drow{display:flex;justify-content:space-between;gap:.6rem;margin-top:1rem;flex-wrap:wrap}
+</style>
+</head>
+<body>
+
+
+<div class="app" dir="rtl" lang="ar" id="app">
+  <header class="top">
+    <div class="brand"><b>لوحة البيت</b> · الدمام</div>
+    <div class="controls">
+      <button class="btn" id="soundBtn" type="button">تفعيل صوت التنبيه</button>
+      <button class="btn" id="testBtn" type="button">تجربة التنبيه</button>
+      <button class="btn" id="fsBtn" type="button">ملء الشاشة</button>
+    </div>
+  </header>
+
+  <main class="board">
+    <section class="col clock" aria-label="الوقت والطقس">
+      <div class="time"><span class="hm num" id="hm">--:--</span><span class="ampm" id="ampm"></span><span class="sec num" id="sec"></span></div>
+      <div class="dates">
+        <div class="greg" id="greg"></div>
+        <div class="hijri" id="hijri"></div>
+      </div>
+      <div class="weather" id="weather">
+        <svg class="wicon" id="wicon" viewBox="0 0 48 48" aria-hidden="true"></svg>
+        <div class="wtemp" id="wtemp">--°</div>
+        <div class="wdesc" id="wdesc">جارٍ تحميل الطقس…</div>
+        <div class="wmeta" id="wmeta"></div>
+      </div>
+    </section>
+
+    <section class="col panel" aria-label="مواقيت الصلاة">
+      <div class="next" id="next">
+        <span class="label">الصلاة القادمة</span>
+        <span class="pname" id="nName">—</span>
+        <span class="count num" id="nCount">--:--:--</span>
+        <span class="at" id="nAt"></span>
+        <span class="warn">اقترب موعد الأذان</span>
+      </div>
+      <ul class="plist" id="plist"></ul>
+      <div class="method">حسب تقويم أم القرى · الدمام</div>
+    </section>
+
+    <section class="col panel" aria-label="المهام والمواعيد">
+      <div class="thead"><h2>اليوم</h2><span class="label" id="tcount"></span></div>
+      <ul class="tlist" id="tlist"></ul>
+      <div class="method" id="tsync"></div>
+    </section>
+  </main>
+</div>
+
+<div class="alert" id="alert" hidden dir="rtl" lang="ar">
+  <div class="a1">حان الآن موعد أذان</div>
+  <div class="a2" id="aName"></div>
+  <div class="a3 num" id="aTime"></div>
+  <button class="btn" id="aClose" type="button">إغلاق</button>
+</div>
+
+
+<script>
+(function(){
+/* ===== الإعدادات: غيّرها إذا انتقلت لمدينة أخرى ===== */
+const LAT = 26.4207, LNG = 50.0888, TZ = 3, TZNAME = 'Asia/Riyadh';
+const PRE_ALERT_MIN = 10;      // تنبيه قبل الأذان بكم دقيقة
+const ALERT_SHOW_MIN = 3;      // مدة بقاء شاشة الأذان
+// رابط جدول Google Sheets بعد «النشر على الويب» بصيغة CSV
+// أو أضفه للرابط هكذا: ?sheet=الرابط
+const SHEET_CSV = '';
+const SHEET_REFRESH_SEC = 60;
+
+const $ = id => document.getElementById(id);
+const load = (k,d) => { try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; }catch(e){ return d; } };
+const save = (k,v) => { try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} };
+
+/* ===== حساب مواقيت الصلاة (أم القرى) ===== */
+const D2R = Math.PI/180, R2D = 180/Math.PI;
+const dsin=d=>Math.sin(d*D2R), dcos=d=>Math.cos(d*D2R), dtan=d=>Math.tan(d*D2R);
+const darcsin=x=>R2D*Math.asin(x), darccos=x=>R2D*Math.acos(x), darctan2=(y,x)=>R2D*Math.atan2(y,x), darccot=x=>R2D*Math.atan(1/x);
+const fix=(a,b)=>{ a = a - b*Math.floor(a/b); return a<0 ? a+b : a; };
+function julian(y,m,d){ if(m<=2){y--;m+=12;} const A=Math.floor(y/100), B=2-A+Math.floor(A/4); return Math.floor(365.25*(y+4716))+Math.floor(30.6001*(m+1))+d+B-1524.5; }
+function sunPos(jd){
+  const D=jd-2451545.0, g=fix(357.529+0.98560028*D,360), q=fix(280.459+0.98564736*D,360);
+  const L=fix(q+1.915*dsin(g)+0.020*dsin(2*g),360), e=23.439-0.00000036*D;
+  const RA=darctan2(dcos(e)*dsin(L),dcos(L))/15;
+  return { decl: darcsin(dsin(e)*dsin(L)), eqt: q/15-fix(RA,24) };
+}
+function isRamadan(date){
+  try{ return parseInt(new Intl.DateTimeFormat('en-u-ca-islamic-umalqura-nu-latn',{month:'numeric',timeZone:TZNAME}).format(date),10)===9; }catch(e){ return false; }
+}
+function prayerTimes(y,m,d){
+  const jd = julian(y,m,d) - LNG/(15*24);
+  const noon = t => fix(12 - sunPos(jd+t/24).eqt, 24);
+  const angT = (ang,t,ccw) => { const s=sunPos(jd+t/24); const T=darccos((-dsin(ang)-dsin(s.decl)*dsin(LAT))/(dcos(s.decl)*dcos(LAT)))/15; return noon(t)+(ccw?-T:T); };
+  const asrT = t => { const s=sunPos(jd+t/24); return angT(-darccot(1+dtan(Math.abs(LAT-s.decl))), t); };
+  const adj = t => t + TZ - LNG/15;
+  let fajr=angT(18.5,5,true), sunrise=angT(0.833,6,true), dhuhr=noon(12), asr=asrT(13), maghrib=angT(0.833,18);
+  // second pass for precision
+  fajr=angT(18.5,fajr,true); sunrise=angT(0.833,sunrise,true); dhuhr=noon(dhuhr); asr=asrT(asr); maghrib=angT(0.833,maghrib);
+  const toMin = h => Math.round(adj(h)*60);
+  const mg = toMin(maghrib);
+  const date = new Date(Date.UTC(y,m-1,d,12) - TZ*3600e3);
+  const friday = new Date(Date.UTC(y,m-1,d)).getUTCDay()===5;
+  return [
+    {key:'fajr',   name:'الفجر',  min:toMin(fajr)},
+    {key:'sunrise',name:'الشروق', min:toMin(sunrise), sun:true},
+    {key:'dhuhr',  name:friday?'الجمعة':'الظهر', min:toMin(dhuhr)},
+    {key:'asr',    name:'العصر',  min:toMin(asr)},
+    {key:'maghrib',name:'المغرب', min:mg},
+    {key:'isha',   name:'العشاء', min:mg + (isRamadan(date)?120:90)}
+  ];
+}
+
+/* ===== تنسيق ===== */
+const pad = n => String(n).padStart(2,'0');
+function fmt12(min){ const h=Math.floor(min/60)%24, m=min%60; return { t:(h%12||12)+':'+pad(m), s: h<12?'ص':'م' }; }
+const fGreg = new Intl.DateTimeFormat('ar-SA-u-ca-gregory-nu-latn',{weekday:'long',day:'numeric',month:'long',year:'numeric',timeZone:TZNAME});
+let fHijri; try{ fHijri = new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura-nu-latn',{day:'numeric',month:'long',year:'numeric',timeZone:TZNAME}); }catch(e){ fHijri=null; }
+
+/* ===== الصوت ===== */
+let actx = null;
+function chime(strong){
+  if(!actx) return;
+  const notes = strong ? [659.25,783.99,987.77,783.99,659.25] : [783.99,987.77];
+  const t0 = actx.currentTime + .05;
+  notes.forEach((f,i)=>{
+    const o=actx.createOscillator(), g=actx.createGain(), s=t0+i*.6;
+    o.type='sine'; o.frequency.value=f;
+    g.gain.setValueAtTime(0,s); g.gain.linearRampToValueAtTime(strong?.4:.25,s+.02); g.gain.exponentialRampToValueAtTime(.001,s+2.4);
+    o.connect(g).connect(actx.destination); o.start(s); o.stop(s+2.5);
+  });
+}
+try{
+  actx = new (window.AudioContext||window.webkitAudioContext)();
+  if(actx.state==='running'){ $('soundBtn').textContent='الصوت مفعّل'; $('soundBtn').classList.add('on'); }
+  else actx.resume().then(()=>{ if(actx.state==='running'){ $('soundBtn').textContent='الصوت مفعّل'; $('soundBtn').classList.add('on'); } }).catch(()=>{});
+}catch(e){ actx=null; }
+$('soundBtn').addEventListener('click',()=>{
+  try{
+    if(!actx) actx = new (window.AudioContext||window.webkitAudioContext)();
+    actx.resume(); chime(false);
+    $('soundBtn').textContent='الصوت مفعّل'; $('soundBtn').classList.add('on');
+  }catch(e){ $('soundBtn').textContent='المتصفح لا يدعم الصوت'; }
+});
+
+/* ===== شاشة الأذان ===== */
+let alertTimer = null;
+function showAlert(p, test){
+  $('aName').textContent = p.name;
+  const f = fmt12(p.min); $('aTime').textContent = f.t+' '+f.s;
+  $('alert').hidden = false;
+  chime(true); setTimeout(()=>chime(true), 4000);
+  clearTimeout(alertTimer);
+  alertTimer = setTimeout(()=>{ $('alert').hidden = true; }, (test?20:ALERT_SHOW_MIN*60)*1000);
+}
+$('aClose').addEventListener('click',()=>{ $('alert').hidden = true; });
+$('testBtn').addEventListener('click',()=>{ const p=(state.times||[]).find(x=>x.key==='asr')||{name:'العصر',min:900}; showAlert(p,true); });
+
+/* ===== المهام من Google Sheets ===== */
+// أعمدة الجدول: المهمة | الوقت | التاريخ | تم
+function todayKey(){ return new Date(Date.now()+TZ*3600e3).toISOString().slice(0,10); }
+let sheetUrl = SHEET_CSV;
+try{ const q = new URLSearchParams(location.search).get('sheet'); if(q) sheetUrl = q; }catch(e){}
+let tasks = null, sheetErr = false, lastSync = null;
+const SAMPLE = () => [
+  {id:1,text:'موعد طبيب الأسنان',time:'17:30',date:'',done:false,sample:true},
+  {id:2,text:'شراء خبز وحليب',time:'',date:'',done:false,sample:true},
+  {id:3,text:'الاتصال بالأهل',time:'20:00',date:'',done:false,sample:true}
+];
+function parseCSV(t){
+  const rows=[]; let row=[], f='', q=false;
+  for(let i=0;i<t.length;i++){
+    const c=t[i];
+    if(q){ if(c==='"'){ if(t[i+1]==='"'){f+='"';i++;} else q=false; } else f+=c; }
+    else if(c==='"') q=true;
+    else if(c===','){ row.push(f); f=''; }
+    else if(c==='\n'||c==='\r'){ if(c==='\r'&&t[i+1]==='\n') i++; row.push(f); rows.push(row); row=[]; f=''; }
+    else f+=c;
+  }
+  if(f!==''||row.length){ row.push(f); rows.push(row); }
+  return rows;
+}
+const toLatin = s => String(s||'').replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[۰-۹]/g,d=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).trim();
+function parseTime(v){
+  v = toLatin(v); if(!v) return '';
+  const m = v.match(/(\d{1,2})[:.](\d{2})/); if(!m) { const h=v.match(/^(\d{1,2})\s*(ص|م|am|pm)?/i); if(!h) return ''; return parseTime(h[1]+':00 '+(h[2]||'')); }
+  let h=+m[1], mi=+m[2];
+  const pm = /م|pm|مساء/i.test(v), am = /ص|am|صباح/i.test(v);
+  if(pm && h<12) h+=12; if(am && h===12) h=0;
+  if(h>23||mi>59) return '';
+  return pad(h)+':'+pad(mi);
+}
+function parseDate(v){
+  v = toLatin(v); if(!v) return '';
+  let m = v.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/); if(m) return m[1]+'-'+pad(+m[2])+'-'+pad(+m[3]);
+  m = v.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/); if(m) return m[3]+'-'+pad(+m[2])+'-'+pad(+m[1]);
+  return 'x';
+}
+const isDone = v => /^(true|yes|x|✓|✔|نعم|تم|1)$/i.test(toLatin(v));
+async function loadSheet(){
+  if(!sheetUrl){ tasks = SAMPLE(); tick(true); return; }
+  try{
+    const r = await fetch(sheetUrl + (sheetUrl.includes('?')?'&':'?') + '_=' + Date.now(), {cache:'no-store'});
+    if(!r.ok) throw 0;
+    const rows = parseCSV(await r.text());
+    const out = [];
+    rows.slice(1).forEach((c,i)=>{
+      const text = (c[0]||'').trim(); if(!text) return;
+      out.push({id:i+1, text, time:parseTime(c[1]), date:parseDate(c[2]), done:isDone(c[3])});
+    });
+    tasks = out; sheetErr = false; lastSync = new Date();
+  }catch(e){ sheetErr = true; if(!tasks) tasks = []; }
+  tick(true);
+}
+function visibleTasks(){
+  const t = todayKey();
+  return (tasks||[]).filter(x=>!x.date || x.date===t).sort((a,b)=>{
+    if(a.time && b.time) return a.time.localeCompare(b.time);
+    if(a.time) return -1; if(b.time) return 1; return a.id-b.id;
+  });
+}
+function timeLabel(hhmm){ if(!hhmm) return ''; const [h,m]=hhmm.split(':').map(Number); const f=fmt12(h*60+m); return f.t+' '+f.s; }
+function renderTasks(nowMin){
+  const ul = $('tlist'); ul.textContent='';
+  if(!tasks){ const li=document.createElement('li'); li.className='empty'; li.textContent='جارٍ تحميل المهام…'; ul.append(li); return; }
+  const list = visibleTasks();
+  const nextId = (list.find(x=>x.time && !x.done && (()=>{const[h,m]=x.time.split(':').map(Number);return h*60+m>=nowMin;})())||{}).id;
+  if(!list.length){ const li=document.createElement('li'); li.className='empty'; li.textContent='لا مهام ولا مواعيد اليوم.'; ul.append(li); }
+  list.forEach(x=>{
+    const li=document.createElement('li'); li.style.cursor='default';
+    if(x.done) li.classList.add('done');
+    if(x.time){ const[h,m]=x.time.split(':').map(Number); if(h*60+m<nowMin) li.classList.add('late'); }
+    const c=document.createElement('span'); c.className='chk';
+    const tm=document.createElement('span'); tm.className='tm num'+(x.time?'':' none'); tm.textContent=x.time?timeLabel(x.time):'—';
+    const tx=document.createElement('span'); tx.className='txt'; tx.textContent=x.text;
+    if(x.id===nextId){ const ch=document.createElement('span'); ch.className='chip nx'; ch.textContent='التالي'; tx.append(ch); }
+    if(x.sample){ const ch=document.createElement('span'); ch.className='chip'; ch.textContent='مثال'; tx.append(ch); }
+    li.append(c,tm,tx); ul.append(li);
+  });
+  const left = list.filter(x=>!x.done).length;
+  $('tcount').textContent = list.length ? (left ? 'متبقٍ '+left+' من '+list.length : 'أنجزت كل شيء') : '';
+  $('tsync').textContent = !sheetUrl ? 'أمثلة · اربط جدول Google Sheets لتظهر مهامك'
+    : sheetErr ? 'تعذّر تحديث الجدول، أعرض آخر نسخة' : lastSync ? 'من جدول Google · يتحدّث كل دقيقة' : '';
+}
+
+/* ===== الطقس (Open-Meteo) ===== */
+const WX = c => c===0?['صحو','sun']:c<=1?['صحو غالبًا','sun']:c===2?['غائم جزئيًا','part']:c===3?['غائم','cloud']:c<=48?['ضباب','fog']:c<=67||(c>=80&&c<=82)?['ممطر','rain']:c<=77?['ثلوج','cloud']:['عاصفة رعدية','storm'];
+const ICON = {
+  sun:'<circle cx="24" cy="24" r="8" fill="none" stroke="currentColor" stroke-width="3"/><g stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M24 4v6M24 38v6M4 24h6M38 24h6M9.9 9.9l4.2 4.2M33.9 33.9l4.2 4.2M9.9 38.1l4.2-4.2M33.9 14.1l4.2-4.2"/></g>',
+  part:'<circle cx="18" cy="17" r="7" fill="none" stroke="currentColor" stroke-width="3"/><path d="M16 38h20a7 7 0 0 0 0-14 10 10 0 0 0-19-1 7.5 7.5 0 0 0-1 15z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>',
+  cloud:'<path d="M14 36h22a8 8 0 0 0 0-16 11 11 0 0 0-21-2 9 9 0 0 0-1 18z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>',
+  fog:'<g stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M8 18h32M12 26h28M8 34h26"/></g>',
+  rain:'<path d="M14 28h22a7 7 0 0 0 0-14 10 10 0 0 0-19-2 8 8 0 0 0-3 16z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><g stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M17 34l-2 6M25 34l-2 6M33 34l-2 6"/></g>',
+  storm:'<path d="M14 28h22a7 7 0 0 0 0-14 10 10 0 0 0-19-2 8 8 0 0 0-3 16z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><path d="M25 30l-5 8h6l-4 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>'
+};
+async function loadWeather(){
+  const url='https://api.open-meteo.com/v1/forecast?latitude='+LAT+'&longitude='+LNG+'&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m&daily=temperature_2m_max,temperature_2m_min&timezone=Asia%2FRiyadh&forecast_days=1';
+  try{
+    const r = await fetch(url); if(!r.ok) throw 0;
+    const j = await r.json(), c=j.current, d=j.daily;
+    const [desc,icon] = WX(c.weather_code);
+    $('wicon').innerHTML = ICON[icon];
+    $('wtemp').innerHTML = '<span class="num">'+Math.round(c.temperature_2m)+'°</span><small>يحسّ كأنها <span class="num">'+Math.round(c.apparent_temperature)+'°</span></small>';
+    $('wdesc').textContent = desc;
+    $('wmeta').innerHTML = '<span>العظمى <b class="num">'+Math.round(d.temperature_2m_max[0])+'°</b></span><span>الصغرى <b class="num">'+Math.round(d.temperature_2m_min[0])+'°</b></span><span>الرطوبة <b class="num">'+c.relative_humidity_2m+'%</b></span><span>الرياح <b class="num">'+Math.round(c.wind_speed_10m)+'</b> كم/س</span>';
+    setTimeout(loadWeather, 20*60*1000);
+  }catch(e){
+    $('wicon').innerHTML = ICON.sun;
+    $('wdesc').textContent = 'الطقس غير متاح هنا. يظهر عند فتح الملف في كروم مباشرة.';
+    setTimeout(loadWeather, 10*60*1000);
+  }
+}
+
+/* ===== التحديث كل ثانية ===== */
+const state = { day:null, times:null, tomorrowFajr:null, fired:load('homeboard.fired',{}) };
+function tick(force){
+  const real = new Date(), d = new Date(real.getTime()+TZ*3600e3);
+  const y=d.getUTCFullYear(), m=d.getUTCMonth()+1, day=d.getUTCDate();
+  const nowSec = d.getUTCHours()*3600 + d.getUTCMinutes()*60 + d.getUTCSeconds(), nowMin = Math.floor(nowSec/60);
+  const dk = y+'-'+pad(m)+'-'+pad(day);
+
+  // clock
+  const h=d.getUTCHours();
+  $('hm').textContent = (h%12||12)+':'+pad(d.getUTCMinutes());
+  $('ampm').textContent = h<12?'صباحًا':'مساءً';
+  $('sec').textContent = pad(d.getUTCSeconds());
+
+  if(state.day!==dk || force){
+    if(state.day!==dk){
+      state.day = dk; state.times = prayerTimes(y,m,day);
+      const t = new Date(Date.UTC(y,m-1,day+1));
+      state.tomorrowFajr = prayerTimes(t.getUTCFullYear(),t.getUTCMonth()+1,t.getUTCDate())[0];
+      $('greg').textContent = fGreg.format(real);
+      $('hijri').textContent = fHijri ? fHijri.format(real) + ' هـ' : '';
+    }
+  }
+
+  // prayer list
+  const T = state.times;
+  let cur = null; T.forEach(p=>{ if(p.min*60<=nowSec) cur=p; });
+  let next = T.find(p=>!p.sun && p.min*60>nowSec), nextSec;
+  if(next) nextSec = next.min*60 - nowSec; else { next = state.tomorrowFajr; nextSec = next.min*60 + 86400 - nowSec; }
+  const ul = $('plist');
+  if(ul.dataset.sig !== dk+(cur?cur.key:'')){
+    ul.dataset.sig = dk+(cur?cur.key:'');
+    ul.textContent='';
+    T.forEach(p=>{
+      const li=document.createElement('li'), f=fmt12(p.min);
+      if(p.sun) li.classList.add('sun');
+      if(cur===p && !p.sun) li.classList.add('cur'); else if(p.min*60<=nowSec) li.classList.add('past');
+      li.innerHTML='<span>'+p.name+'</span><span class="t"><span class="num">'+f.t+'</span><small>'+f.s+'</small></span>';
+      ul.append(li);
+    });
+  }
+  $('nName').textContent = next.name;
+  $('nCount').textContent = Math.floor(nextSec/3600)+':'+pad(Math.floor(nextSec%3600/60))+':'+pad(nextSec%60);
+  const nf = fmt12(next.min); $('nAt').textContent = 'الأذان الساعة '+nf.t+' '+nf.s;
+  $('next').classList.toggle('soon', nextSec <= PRE_ALERT_MIN*60);
+
+  // alerts
+  T.forEach(p=>{
+    if(p.sun) return;
+    const k = dk+'-'+p.key, kp = k+'-pre', s = p.min*60;
+    if(nowSec>=s && nowSec<s+ALERT_SHOW_MIN*60 && !state.fired[k]){ state.fired[k]=1; save('homeboard.fired',state.fired); showAlert(p); }
+    if(nowSec>=s-PRE_ALERT_MIN*60 && nowSec<s && !state.fired[kp]){ state.fired[kp]=1; save('homeboard.fired',state.fired); chime(false); }
+  });
+  if(force || d.getUTCSeconds()===0) renderTasks(nowMin);
+}
+function loop(){ tick(false); setTimeout(loop, 1000 - (Date.now()%1000) + 5); }
+// prune old alert keys
+Object.keys(state.fired).forEach(k=>{ if(k.slice(0,10)!==todayKey()) delete state.fired[k]; });
+tick(true); loop(); loadWeather(); loadSheet(); setInterval(loadSheet, SHEET_REFRESH_SEC*1000);
+
+/* ===== شاشة التلفزيون: ملء الشاشة، منع إطفاء الشاشة، إخفاء الأزرار ===== */
+$('fsBtn').addEventListener('click',()=>{
+  const el=document.documentElement;
+  if(document.fullscreenElement) document.exitFullscreen().catch(()=>{});
+  else if(el.requestFullscreen) el.requestFullscreen().catch(()=>{});
+});
+async function wake(){ try{ if(navigator.wakeLock && document.visibilityState==='visible') await navigator.wakeLock.request('screen'); }catch(e){} }
+document.addEventListener('visibilitychange', wake); wake();
+let idleT; const app=$('app');
+function active(){ app.classList.remove('idle'); clearTimeout(idleT); idleT=setTimeout(()=>app.classList.add('idle'),5000); }
+['mousemove','keydown','touchstart'].forEach(ev=>document.addEventListener(ev,active,{passive:true})); active();
+})();
+</script>
+
+</body>
+</html>
