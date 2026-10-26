@@ -12,7 +12,7 @@
 /* Layout: TV landscape, three columns read right-to-left — the hour, the prayers, the day's list. Single dark look chosen for a screen that stays on all day. */
 :root{
   --bg:#0A1824; --panel:rgba(8,20,32,.68); --line:rgba(236,226,206,.14); --fg:#F7F0E2; --muted:#BAC7CF;
-  --accent:#F1C76E; --accent-soft:rgba(241,199,110,.2); --accent-ink:#231804; --soon:#FF9F6E; --sky:#9AD0F2;
+  --accent:#F1C76E; --accent-soft:rgba(241,199,110,.2); --accent-ink:#231804; --soon:#FF9F6E; --sky:#9AD0F2; --up:#6FD39A; --down:#FF8A80;
   --display:"Reem Kufi","IBM Plex Sans Arabic",system-ui,sans-serif;
   --body:"IBM Plex Sans Arabic",system-ui,"Segoe UI",Tahoma,sans-serif;
   color-scheme:dark;
@@ -55,7 +55,8 @@ button{cursor:pointer}
 .dates{display:flex;flex-direction:column;gap:.1rem;margin-top:.6rem}
 .greg{font-size:1.6rem;font-weight:500}
 .hijri{font-size:1.2rem;color:var(--accent)}
-.weather{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:1.2rem 1.4rem;margin-top:auto;display:grid;grid-template-columns:auto 1fr;gap:.4rem 1.2rem;align-items:center;}
+.stocks{margin-top:auto}
+.weather{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:1.2rem 1.4rem;display:grid;grid-template-columns:auto 1fr;gap:.4rem 1.2rem;align-items:center;}
 .wicon{width:4.6rem;height:4.6rem;color:var(--sky);grid-row:span 2}
 .wtemp{font-family:var(--display);font-size:3.6rem;line-height:1;font-weight:600}
 .wtemp small{font-size:.4em;color:var(--muted);font-weight:500;margin-inline-start:.4rem}
@@ -97,7 +98,30 @@ button{cursor:pointer}
 .txt{min-width:0;overflow-wrap:anywhere}
 .chip{font-size:.68rem;border:1px solid var(--line);color:var(--muted);border-radius:999px;padding:.05rem .5rem;margin-inline-start:.4rem;vertical-align:middle;white-space:nowrap}
 .chip.nx{border-color:var(--accent);color:var(--accent)}
+.chip.late-chip{border-color:var(--soon);color:var(--soon)}
 .empty{color:var(--muted);padding:1rem 0}
+
+/* stocks */
+.stocks{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:1rem 1.4rem;text-shadow:none}
+.stocks .label{display:flex;justify-content:space-between;gap:1rem;margin-bottom:.4rem}
+.slist{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:.15rem 1.6rem}
+.slist li{display:grid;grid-template-columns:1fr auto auto;gap:.7rem;align-items:baseline;padding:.3rem 0;border-bottom:1px solid var(--line);font-size:1rem;min-width:0}
+.slist li.idx{grid-column:1/-1;font-size:1.15rem}
+.slist .sn{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.slist .sp{font-weight:500}
+.slist .sc{font-size:.85em;min-width:3.6rem;text-align:left}
+.up{color:var(--up)} .down{color:var(--down)} .flat{color:var(--muted)}
+.snote{color:var(--muted);font-size:.9rem}
+
+/* news ticker */
+.ticker{display:flex;align-items:stretch;background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;min-height:3.2rem}
+.ticker .tag{flex:none;display:flex;align-items:center;padding:0 1.1rem;background:var(--accent);color:var(--accent-ink);font-family:var(--display);font-weight:600;font-size:1.15rem}
+.ticker .rail{flex:1;min-width:0;overflow:hidden;position:relative;display:flex;align-items:center}
+.ticker .run{display:inline-flex;white-space:nowrap;gap:0;font-size:1.25rem;will-change:transform}
+.ticker .run span{padding:0 1.4rem}
+.ticker .run span::after{content:"◆";color:var(--accent);font-size:.55em;margin-inline-start:2.8rem;vertical-align:middle}
+.ticker .msg{color:var(--muted);padding:0 1.2rem;font-size:1rem}
+@keyframes ticker{from{transform:translateX(var(--from))}to{transform:translateX(var(--to))}}
 
 /* alert overlay */
 .alert{position:fixed;inset:0;z-index:50;background:rgba(6,14,22,.9);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;text-align:center;padding:2rem}
@@ -143,6 +167,10 @@ dialog h3{margin:0 0 1rem;font-family:var(--display);font-size:1.4rem}
         <div class="greg" id="greg"></div>
         <div class="hijri" id="hijri"></div>
       </div>
+      <div class="stocks" aria-label="الأسهم">
+        <div class="label"><span>الأسهم</span><span id="stime"></span></div>
+        <ul class="slist" id="slist"><li class="snote">تظهر الأسعار بعد ربط الجسر</li></ul>
+      </div>
       <div class="weather" id="weather">
         <svg class="wicon" id="wicon" viewBox="0 0 48 48" aria-hidden="true"></svg>
         <div class="wtemp" id="wtemp">--°</div>
@@ -169,6 +197,10 @@ dialog h3{margin:0 0 1rem;font-family:var(--display);font-size:1.4rem}
       <div class="method" id="tsync"></div>
     </section>
   </main>
+  <footer class="ticker" aria-label="أخبار العربية">
+    <div class="tag">العربية</div>
+    <div class="rail" id="rail"><div class="msg">يظهر شريط الأخبار بعد ربط الجسر</div></div>
+  </footer>
 </div>
 
 <div class="alert" id="alert" hidden dir="rtl" lang="ar">
@@ -185,7 +217,7 @@ dialog h3{margin:0 0 1rem;font-family:var(--display);font-size:1.4rem}
 const LAT = 26.4207, LNG = 50.0888, TZ = 3, TZNAME = 'Asia/Riyadh';
 const PRE_ALERT_MIN = 10;      // تنبيه قبل الأذان بكم دقيقة
 const ALERT_SHOW_MIN = 3;      // مدة بقاء شاشة الأذان
-// رابط جدول Google Sheets بعد «النشر على الويب» بصيغة CSV
+// مصدر المهام: رابط جسر Google Tasks (Apps Script) أو رابط جدول Google Sheets منشور بصيغة CSV
 // أو أضفه للرابط هكذا: ?sheet=الرابط
 const SHEET_CSV = '';
 const SHEET_REFRESH_SEC = 60;
@@ -323,9 +355,13 @@ async function loadSheet(){
   try{
     const r = await fetch(sheetUrl + (sheetUrl.includes('?')?'&':'?') + '_=' + Date.now(), {cache:'no-store'});
     if(!r.ok) throw 0;
-    const rows = parseCSV(await r.text());
+    const body = await r.text();
     const out = [];
-    rows.slice(1).forEach((c,i)=>{
+    let json = null; try{ json = JSON.parse(body); }catch(e){}
+    if(json){ if(Array.isArray(json.news)) renderNews(json.news); if(Array.isArray(json.stocks)) renderStocks(json.stocks); }
+    if(json && Array.isArray(json.tasks)){
+      json.tasks.forEach((x,i)=>{ if(x && x.text) out.push({id:i+1, text:String(x.text), time:parseTime(x.time||''), date:x.date?parseDate(x.date):'', done:!!x.done}); });
+    } else parseCSV(body).slice(1).forEach((c,i)=>{
       const text = (c[0]||'').trim(); if(!text) return;
       out.push({id:i+1, text, time:parseTime(c[1]), date:parseDate(c[2]), done:isDone(c[3])});
     });
@@ -335,7 +371,9 @@ async function loadSheet(){
 }
 function visibleTasks(){
   const t = todayKey();
-  return (tasks||[]).filter(x=>!x.date || x.date===t).sort((a,b)=>{
+  (tasks||[]).forEach(x=>{ x.overdue = !!(x.date && x.date!=='x' && x.date<t && !x.done); });
+  return (tasks||[]).filter(x=>!x.date || x.date===t || x.overdue).sort((a,b)=>{
+    if(a.overdue!==b.overdue) return a.overdue?-1:1;
     if(a.time && b.time) return a.time.localeCompare(b.time);
     if(a.time) return -1; if(b.time) return 1; return a.id-b.id;
   });
@@ -355,13 +393,52 @@ function renderTasks(nowMin){
     const tm=document.createElement('span'); tm.className='tm num'+(x.time?'':' none'); tm.textContent=x.time?timeLabel(x.time):'—';
     const tx=document.createElement('span'); tx.className='txt'; tx.textContent=x.text;
     if(x.id===nextId){ const ch=document.createElement('span'); ch.className='chip nx'; ch.textContent='التالي'; tx.append(ch); }
+    if(x.overdue){ const ch=document.createElement('span'); ch.className='chip late-chip'; ch.textContent='متأخرة'; tx.append(ch); }
     if(x.sample){ const ch=document.createElement('span'); ch.className='chip'; ch.textContent='مثال'; tx.append(ch); }
     li.append(c,tm,tx); ul.append(li);
   });
   const left = list.filter(x=>!x.done).length;
   $('tcount').textContent = list.length ? (left ? 'متبقٍ '+left+' من '+list.length : 'أنجزت كل شيء') : '';
   $('tsync').textContent = !sheetUrl ? 'تذكيرات يومية · اربط جدول Google لتعديلها من جوالك'
-    : sheetErr ? 'تعذّر تحديث الجدول، أعرض آخر نسخة' : lastSync ? 'من جدول Google · يتحدّث كل دقيقة' : '';
+    : sheetErr ? 'تعذّر تحديث الجدول، أعرض آخر نسخة' : lastSync ? 'من مهام Google · تتحدّث كل دقيقة' : '';
+}
+
+/* ===== الأسهم ===== */
+const nf2 = new Intl.NumberFormat('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+function renderStocks(list){
+  const ul=$('slist'); ul.textContent='';
+  if(!list.some(x=>x.price!=null)){ const li=document.createElement('li'); li.className='snote'; li.textContent='الأسعار غير متاحة حاليًا'; ul.append(li); return; }
+  list.forEach(x=>{
+    const li=document.createElement('li'); if(/^\^/.test(x.symbol)) li.className='idx';
+    const n=document.createElement('span'); n.className='sn'; n.textContent=x.name;
+    const pr=document.createElement('span'); pr.className='sp num'; pr.textContent=x.price!=null?((x.currency==='USD'?'$':'')+nf2.format(x.price)):'—';
+    const c=document.createElement('span'); const ch=x.change;
+    c.className='sc num '+(ch==null?'flat':ch>0.005?'up':ch<-0.005?'down':'flat');
+    c.textContent = ch==null?'':(ch>0?'▲ ':ch<0?'▼ ':'')+Math.abs(ch).toFixed(2)+'%';
+    li.append(n,pr,c); ul.append(li);
+  });
+  const d=new Date(Date.now()+TZ*3600e3); const f=fmt12(d.getUTCHours()*60+d.getUTCMinutes());
+  $('stime').innerHTML='تحديث <span class="num">'+f.t+'</span> '+f.s;
+}
+
+/* ===== شريط الأخبار ===== */
+let newsSig='';
+function renderNews(items){
+  items = items.filter(Boolean); const sig=items.join('|');
+  if(!items.length || sig===newsSig) return; newsSig=sig;
+  const rail=$('rail'); rail.textContent='';
+  const run=document.createElement('div'); run.className='run';
+  items.forEach(t=>{ const sp=document.createElement('span'); sp.textContent=t; run.append(sp); });
+  rail.append(run);
+  requestAnimationFrame(()=>{
+    const w=run.scrollWidth, rw=rail.clientWidth;
+    // النص يدخل من اليسار ويتحرك يمينًا، كما في الشرائط العربية
+    run.style.setProperty('--from', (-w)+'px');
+    run.style.setProperty('--to', rw+'px');
+    run.style.position='absolute'; run.style.left='0';
+    const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if(!reduce) run.style.animation='ticker '+Math.max(30,(w+rw)/70)+'s linear infinite';
+  });
 }
 
 /* ===== الطقس (Open-Meteo) ===== */
