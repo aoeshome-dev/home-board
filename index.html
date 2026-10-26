@@ -1,3 +1,8 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>لوحة البيت</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -12,6 +17,9 @@
   --body:"IBM Plex Sans Arabic",system-ui,"Segoe UI",Tahoma,sans-serif;
   color-scheme:dark;
 }
+[hidden]{display:none!important}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0}
 html,body{height:100%}
 body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:clamp(14px,1.05vw,30px);line-height:1.5}
 .app{min-height:100%;box-sizing:border-box;display:flex;flex-direction:column;gap:1.4rem;padding-block:1.4rem;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
@@ -114,6 +122,9 @@ dialog h3{margin:0 0 1rem;font-family:var(--display);font-size:1.4rem}
 .del{background:none;border:0;color:var(--soon);font-size:.85rem;white-space:nowrap}
 .drow{display:flex;justify-content:space-between;gap:.6rem;margin-top:1rem;flex-wrap:wrap}
 </style>
+</head>
+<body>
+
 
 <div class="app" dir="rtl" lang="ar" id="app">
   <header class="top">
@@ -454,3 +465,6 @@ function active(){ app.classList.remove('idle'); clearTimeout(idleT); idleT=setT
 ['mousemove','keydown','touchstart'].forEach(ev=>document.addEventListener(ev,active,{passive:true})); active();
 })();
 </script>
+
+</body>
+</html>
