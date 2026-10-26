@@ -219,7 +219,7 @@ const PRE_ALERT_MIN = 10;      // تنبيه قبل الأذان بكم دقيق
 const ALERT_SHOW_MIN = 3;      // مدة بقاء شاشة الأذان
 // مصدر المهام: رابط جسر Google Tasks (Apps Script) أو رابط جدول Google Sheets منشور بصيغة CSV
 // أو أضفه للرابط هكذا: ?sheet=الرابط
-const SHEET_CSV = '';
+const SHEET_CSV = 'https://script.google.com/macros/s/AKfycbw-dZC3yItsd6bKYfAcaKIUL6xK5jJntkgy5zS078H-1tV-Mvgh7QbyP1OFVvRSqdzF/exec';
 const SHEET_REFRESH_SEC = 60;
 
 const $ = id => document.getElementById(id);
@@ -361,7 +361,8 @@ async function loadSheet(){
     if(json){ if(Array.isArray(json.news)) renderNews(json.news); if(Array.isArray(json.stocks)) renderStocks(json.stocks); }
     if(json && Array.isArray(json.tasks)){
       json.tasks.forEach((x,i)=>{ if(x && x.text) out.push({id:i+1, text:String(x.text), time:parseTime(x.time||''), date:x.date?parseDate(x.date):'', done:!!x.done}); });
-    } else parseCSV(body).slice(1).forEach((c,i)=>{
+    } else if(json){ SAMPLE().forEach(x=>out.push(x)); }
+    else parseCSV(body).slice(1).forEach((c,i)=>{
       const text = (c[0]||'').trim(); if(!text) return;
       out.push({id:i+1, text, time:parseTime(c[1]), date:parseDate(c[2]), done:isDone(c[3])});
     });
